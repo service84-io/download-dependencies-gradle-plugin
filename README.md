@@ -24,6 +24,8 @@ This plugin adds a task to download all dependencies in a gradle project.  This 
 This library is available from Maven Central with more information at
 https://mvnrepository.com/artifact/io.service84.downloaddependencies/io.service84.downloaddependencies.gradle.plugin
 
+TODO make this available on the Gradle Plugin Portal
+
 ## Build
 This is a Java 11 project that builds best with Gradle 6.3
 
