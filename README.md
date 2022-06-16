@@ -20,6 +20,10 @@ This plugin adds a task to download all dependencies in a gradle project.  This 
       id 'io.service84.downloaddependencies' version '0.5.0-SNAPSHOT'
     }
 
+To download the dependencies run the following task
+
+    gradle downloadDependencies
+
 ### Availability
 This library is available from Maven Central with more information at
 https://mvnrepository.com/artifact/io.service84.downloaddependencies/io.service84.downloaddependencies.gradle.plugin
