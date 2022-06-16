@@ -1,0 +1,35 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Auto Publish
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - name: Build with Gradle
+      run: gradle build
+    - name: Publish with Gradle
+      env:
+        ORG_GRADLE_PROJECT_ioService84OSSUsername: ${{ secrets.IO_SERVICE84_OSS_USERNAME }}
+        ORG_GRADLE_PROJECT_ioService84OSSPassword: ${{ secrets.IO_SERVICE84_OSS_PASSWORD }}
+        ORG_GRADLE_PROJECT_signingKey: ${{ secrets.IO_SERVICE84_KEY_DATA }}
+        ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.IO_SERVICE84_KEY_PASSWORD }}
+      run: gradle publish

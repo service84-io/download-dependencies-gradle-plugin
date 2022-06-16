@@ -1,0 +1,192 @@
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+plugins {
+  id 'java-library'
+  id 'java-gradle-plugin'
+  id 'maven-publish'
+  id 'signing'
+  id 'eclipse'
+  id 'java'
+}
+
+apply plugin: 'eclipse'
+apply plugin: 'java'
+
+apply from: 'version.gradle'
+
+def s84Group = "io.service84.${s84CoreName}"
+def s84JarName = "${s84Group}.gradle.plugin"
+
+// configure all java components to be published
+publishing {
+  publications {
+    maven(MavenPublication) {
+      from(components.java)
+    }
+  }
+  repositories {
+    maven {
+      name = 'OSSRH'
+      def releasesURL = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+      def snapshotsURL = 'https://s01.oss.sonatype.org/content/repositories/snapshots'
+      url = s84Version.endsWith('SNAPSHOT') ? snapshotsURL : releasesURL
+
+      credentials {
+        def ossUsername = project.hasProperty('ioService84OSSUsername') ? ioService84OSSUsername : 'Unknown user'
+        def ossPassword = project.hasProperty('ioService84OSSPassword') ? ioService84OSSPassword : 'Unknown password'
+        username = ossUsername
+        password = ossPassword
+      }
+    }
+  }
+}
+
+// ossrh requires javadoc and sources https://central.sonatype.org/pages/requirements.html
+java {
+  withJavadocJar()
+  withSourcesJar()
+}
+
+jar {
+  archiveBaseName = s84JarName
+  archiveVersion = s84Version
+  enabled = true
+
+  from('.') {
+    include  'LICENSE'
+    include  'NOTICE'
+  }
+}
+
+// ossrh requries signing https://central.sonatype.org/pages/requirements.html
+// https://docs.gradle.org/current/userguide/signing_plugin.html
+// this only configures signing if the key is found
+// For signing you need to make signingKey and signingPassword available properties See https://docs.gradle.org/current/userguide/build_environment.html#sec:project_properties
+// The following makes the key available via the Gradle Property signingKey
+// export ORG_GRADLE_PROJECT_signingKey=`cat test-private.pgp`
+// export ORG_GRADLE_PROJECT_signingPassword='password'
+// After making the Gradle properties above available, you can try signing using
+// gradle signMavenPublication
+//
+// NOTE: If you are using the legacy publishing you need to sign using the info at https://docs.gradle.org/current/userguide/signing_plugin.html#sec:signing_pom_files
+def hasSigningKey = project.hasProperty('signing.keyId') || project.findProperty('signingKey')
+
+if(hasSigningKey) {
+  sign(project)
+}
+
+void sign(Project project) {
+  project.signing {
+    required { project.gradle.taskGraph.hasTask('publish') }
+    def signingKeyId = project.findProperty('signingKeyId')
+    def signingKey = project.findProperty('signingKey')
+    def signingPassword = project.findProperty('signingPassword')
+
+    if (signingKeyId) {
+      useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    } else if (signingKey) {
+      useInMemoryPgpKeys(signingKey, signingPassword)
+    }
+
+    sign publishing.publications.maven
+  }
+}
+
+// customize the pom so it complies to Maven central requirements https://central.sonatype.org/pages/requirements.html
+// https://docs.gradle.org/current/userguide/maven_plugin.html#sec:maven_pom_generation
+project.plugins.withType(MavenPublishPlugin).all {
+  PublishingExtension publishing = project.extensions.getByType(PublishingExtension)
+
+  publishing.publications.withType(MavenPublication).all { mavenPublication ->
+    mavenPublication.pom {
+      name = s84Name
+      packaging = 'jar'
+      description = s84Description
+      groupId = s84Group
+      artifactId = s84JarName
+      version = s84Version
+      url = s84GithubBase
+
+      scm {
+        connection = 'scm:git:' + s84GithubBase + '.git'
+        developerConnection = 'scm:git:' + s84GithubBase + '.git'
+        url = s84GithubBase
+      }
+
+      licenses {
+        license {
+          name = 'The Apache License, Version 2.0'
+          url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+        }
+      }
+
+      developers {
+        developer {
+          id = 'tyler'
+          name = 'Tyler'
+          email = 'Tyler@service84.io'
+        }
+      }
+    }
+  }
+}
+
+sourceCompatibility = 11.0
+
+sourceSets {
+  main {
+    java {
+      srcDir 'gen/main/java'
+    }
+    resources {
+      srcDir 'gen/main/resources'
+    }
+  }
+}
+
+repositories {
+  if (s84Version.endsWith('SNAPSHOT')) {
+    mavenLocal()
+    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
+  }
+
+  mavenCentral()
+}
+
+dependencies {
+  ////////////////////////////////
+  //Test Dependencies/////////////
+  ////////////////////////////////
+  testImplementation 'org.junit.jupiter:junit-jupiter:5.5.2'
+  testImplementation 'org.junit.vintage:junit-vintage-engine:5.5.2'
+  testImplementation 'org.mockito:mockito-junit-jupiter:3.1.0'
+  testImplementation 'org.assertj:assertj-core:3.13.2'
+  testImplementation 'org.hamcrest:hamcrest:2.1'
+  testImplementation 'org.mockito:mockito-core:3.1.0 (*)'
+  testImplementation 'org.skyscreamer:jsonassert:1.5.0'
+  testImplementation 'org.xmlunit:xmlunit-core:2.6.3'
+}
+
+test {
+  useJUnitPlatform()
+}
+
+gradlePlugin {
+  plugins {
+    s84DownloadDependencies {
+      id = s84Group
+      implementationClass = "${s84Group}.PluginImpl"
+      version = s84Version
+    }
+  }
+}
