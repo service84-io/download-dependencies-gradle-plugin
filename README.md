@@ -17,7 +17,7 @@ limitations under the License.
 This plugin adds a task to download all dependencies in a gradle project.  This is to support docker builds by creating a layer that only needs to change when the build.gradle file changes.
 
     plugin {
-      id 'io.service84.downloaddependencies' version '0.5.0-SNAPSHOT'
+      id 'io.service84.downloaddependencies' version '0.5.0'
     }
 
 To download the dependencies run the following task
