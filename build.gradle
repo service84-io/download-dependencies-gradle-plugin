@@ -182,6 +182,7 @@ test {
 }
 
 gradlePlugin {
+  setAutomatedPublishing false
   plugins {
     s84DownloadDependencies {
       id = s84Group
