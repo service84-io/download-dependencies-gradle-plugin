@@ -15,5 +15,5 @@ ext {
   s84CoreName = 'downloaddependencies'
   s84Description = 'Download Dependencies Gradle Plugin'
   s84GithubBase = 'https://github.com/service84-io/download-dependencies-gradle-plugin'
-  s84Version = '0.5.0'
+  s84Version = '0.5.1-SNAPSHOT'
 }
